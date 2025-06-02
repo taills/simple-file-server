@@ -155,19 +155,9 @@ func DownloadFile(c *gin.Context) {
 func DeleteFile(c *gin.Context) {
 	filename := c.Param("filename")
 	path := c.DefaultQuery("path", "")
-
-	// 验证完整路径
-	fullPath, ok := validatePath(config.AppConfig.StoragePath, path, filename)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path or filename"})
-		return
-	}
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path, filename)
 
 	if err := os.Remove(fullPath); err != nil {
-		if os.IsNotExist(err) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete file"})
 		return
 	}

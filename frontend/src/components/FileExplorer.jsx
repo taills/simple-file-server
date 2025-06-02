@@ -45,11 +45,12 @@ function FileExplorer() {
   const [successMessage, setSuccessMessage] = useState('');
   const [newDirName, setNewDirName] = useState('');
   const [isCreateDirDialogOpen, setIsCreateDirDialogOpen] = useState(false);
+  const [isCurlDialogOpen, setIsCurlDialogOpen] = useState(false);
   const [pathHistory, setPathHistory] = useState([{ name: '根目录', path: '' }]);
   const [isUploading, setIsUploading] = useState(false); // 防止重复上传
   const fileInputRef = useRef(null);
 
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
   const navigate = useNavigate();
 
   // 加载文件和目录
@@ -103,8 +104,7 @@ function FileExplorer() {
   // 处理文件下载
   const handleDownload = async (fileName) => {
     try {
-      const fullPath = currentPath ? `${currentPath}/${fileName}` : fileName;
-      const response = await fileAPI.downloadFile(fullPath);
+      const response = await fileAPI.downloadFile(fileName, currentPath);
       
       // 创建下载链接
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -180,13 +180,33 @@ function FileExplorer() {
 
     try {
       console.log('开始调用API上传文件...');
+      // 检查文件名是否包含非法字符
+      const fileName = selectedFile.name;
+      const invalidChars = /[<>:"\/\\|?*\x00-\x1F]/g;
+      if (invalidChars.test(fileName)) {
+        throw new Error('文件名包含非法字符 (<>:"/\\|?*)');
+      }
+
+      // 构造完整路径并检查
+      const fullPath = currentPath ? `${currentPath}/${fileName}` : fileName;
+      console.log('上传路径:', fullPath);
+
       const response = await fileAPI.uploadFile(selectedFile, currentPath);
       console.log('上传成功，服务器响应:', response.data);
-      setSuccessMessage(`文件 ${selectedFile.name} 上传成功`);
+      setSuccessMessage(`文件 ${fileName} 上传成功`);
       loadFilesAndDirectories(); // 刷新文件列表
     } catch (err) {
       console.error('上传错误详情:', err);
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || '未知错误';
+      let errorMessage;
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else {
+        errorMessage = '未知错误';
+      }
       console.error('错误消息:', errorMessage);
       setError('上传文件失败：' + errorMessage);
     } finally {
@@ -224,6 +244,29 @@ function FileExplorer() {
         : '';
       setError('创建目录失败：' + (err.response?.data?.message || err.message || '未知错误') + errorDetail);
       setIsLoading(false); // 出错时停止加载指示器
+    }
+  };
+
+  // 生成 curl 上传命令
+  const generateCurlCommand = useCallback(() => {
+    const baseUrl = window.location.origin;
+    const token = localStorage.getItem('token');
+    // 清理路径，移除开头和结尾的斜杠
+    const uploadPath = currentPath ? currentPath.replace(/^\/+|\/+$/g, '') : '';
+    return `curl -X POST \\
+  "${baseUrl}/api/upload?path=${encodeURIComponent(uploadPath)}" \\
+  -H "Authorization: Bearer ${token}" \\
+  -F "file=@/path/to/your/local/file"`;
+  }, [currentPath]);
+
+  // 复制到剪贴板
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSuccessMessage('命令已复制到剪贴板');
+      setIsCurlDialogOpen(false);
+    } catch (err) {
+      setError('复制到剪贴板失败');
     }
   };
 
@@ -302,6 +345,13 @@ function FileExplorer() {
               onClick={loadFilesAndDirectories}
             >
               刷新
+            </Button>
+            <Button
+              variant="outlined"
+              color="info"
+              onClick={() => setIsCurlDialogOpen(true)}
+            >
+              获取上传命令
             </Button>
           </Box>
 
@@ -430,6 +480,33 @@ function FileExplorer() {
         <DialogActions>
           <Button onClick={() => setIsCreateDirDialogOpen(false)}>取消</Button>
           <Button onClick={handleCreateDirectory} variant="contained">创建</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Curl 命令对话框 */}
+      <Dialog
+        open={isCurlDialogOpen}
+        onClose={() => setIsCurlDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>文件上传命令</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', my: 2 }}>
+            {generateCurlCommand()}
+          </DialogContentText>
+          <DialogContentText>
+            使用说明:
+            1. 命令将上传文件到当前目录: {currentPath || '根目录'}
+            2. 请将 '/path/to/your/local/file' 替换为您本地文件的实际路径
+            3. token 已从本地存储自动获取
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCurlDialogOpen(false)}>关闭</Button>
+          <Button onClick={() => copyToClipboard(generateCurlCommand())} variant="contained">
+            复制命令
+          </Button>
         </DialogActions>
       </Dialog>
 

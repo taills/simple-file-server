@@ -59,13 +59,12 @@ export const authAPI = {
 export const fileAPI = {
   // 上传文件
   uploadFile: (file, path = '') => {
-    console.log('API - 准备上传文件:', file.name, '路径:', path);
+    // 清理路径，移除开头的斜杠，保证路径格式正确
+    const cleanPath = path ? path.replace(/^\/+|\/+$/g, '') : '';
+    console.log('API - 准备上传文件:', file.name, '路径:', cleanPath);
     const formData = new FormData();
     formData.append('file', file);
-    if (path) {
-      console.log('API - 添加路径:', path);
-      formData.append('path', path);
-    }
+    formData.append('path', cleanPath);
     
     // 检查formData内容
     console.log('API - FormData内容检查:');
@@ -74,7 +73,7 @@ export const fileAPI = {
     }
     
     return api.post('/api/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': 'multipart/form-data', },
       onUploadProgress: (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         console.log('API - 上传进度:', percentCompleted + '%');
@@ -83,8 +82,9 @@ export const fileAPI = {
   },
 
   // 下载文件
-  downloadFile: (filename) => {
+  downloadFile: (filename, path = '') => {
     return api.get(`/api/download/${encodeURIComponent(filename)}`, {
+      params: { path },
       responseType: 'blob',
     });
   },
