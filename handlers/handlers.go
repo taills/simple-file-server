@@ -1,0 +1,225 @@
+package handlers
+
+import (
+	"file-server/config"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// 登录处理
+func Login(c *gin.Context) {
+	// 打印请求头
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET")
+
+	log.Println("收到登录请求, 内容类型:", c.ContentType())
+
+	// 尝试从JSON中读取
+	var loginData struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	// 先尝试绑定JSON
+	if err := c.ShouldBindJSON(&loginData); err != nil {
+		log.Println("JSON绑定失败:", err)
+		// 如果JSON绑定失败，尝试从表单获取
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+		log.Println("表单数据:", username, password)
+
+		if username == "" || password == "" {
+			log.Println("缺少凭证")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing credentials"})
+			return
+		}
+
+		loginData.Username = username
+		loginData.Password = password
+	}
+
+	log.Printf("登录尝试: 用户名=%s, 密码=%s\n", loginData.Username, loginData.Password)
+
+	if loginData.Username != config.AppConfig.AdminUsername || loginData.Password != config.AppConfig.AdminPassword {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": loginData.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+}
+
+// 上传文件
+func UploadFile(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	path := c.DefaultPostForm("path", "")
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path)
+
+	// 确保目录存在
+	if err := os.MkdirAll(fullPath, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create directory"})
+		return
+	}
+
+	filename := filepath.Join(fullPath, file.Filename)
+	if err := c.SaveUploadedFile(file, filename); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save file"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully"})
+}
+
+// 下载文件
+func DownloadFile(c *gin.Context) {
+	filename := c.Param("filename")
+	path := c.DefaultQuery("path", "")
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path, filename)
+
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	c.File(fullPath)
+}
+
+// 删除文件
+func DeleteFile(c *gin.Context) {
+	filename := c.Param("filename")
+	path := c.DefaultQuery("path", "")
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path, filename)
+
+	if err := os.Remove(fullPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete file"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
+}
+
+// 列出文件
+func ListFiles(c *gin.Context) {
+	path := c.DefaultQuery("path", "")
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path)
+
+	files, err := os.ReadDir(fullPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not read directory"})
+		return
+	}
+
+	var fileList []map[string]interface{}
+	var dirList []map[string]interface{}
+
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			continue
+		}
+
+		fileData := map[string]interface{}{
+			"name":    file.Name(),
+			"size":    info.Size(),
+			"modTime": info.ModTime(),
+		}
+
+		if file.IsDir() {
+			dirList = append(dirList, fileData)
+		} else {
+			fileList = append(fileList, fileData)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"directories": dirList,
+		"files":       fileList,
+	})
+}
+
+// 创建目录
+func CreateDirectory(c *gin.Context) {
+	var data struct {
+		Name string `json:"name"`
+		Path string `json:"path"`
+	}
+
+	if err := c.ShouldBindJSON(&data); err != nil {
+		// 如果JSON绑定失败，尝试从表单获取
+		path := c.PostForm("path")
+		name := c.PostForm("name")
+
+		if path == "" || name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Path and name are required", "details": err.Error()})
+			return
+		}
+
+		data.Path = path
+		data.Name = name
+	}
+
+	// 构建完整的目录路径
+	dirPath := data.Path
+	if dirPath != "" && data.Name != "" {
+		dirPath = filepath.Join(dirPath, data.Name)
+	} else if data.Name != "" {
+		dirPath = data.Name
+	}
+
+	fullPath := filepath.Join(config.AppConfig.StoragePath, dirPath)
+	if err := os.MkdirAll(fullPath, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create directory", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Directory created successfully"})
+}
+
+// 删除目录
+func DeleteDirectory(c *gin.Context) {
+	dirName := c.Param("dirname")
+	path := c.DefaultQuery("path", "")
+	fullPath := filepath.Join(config.AppConfig.StoragePath, path, dirName)
+
+	// 检查是否是目录
+	info, err := os.Stat(fullPath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Directory not found"})
+		return
+	}
+
+	if !info.IsDir() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Not a directory"})
+		return
+	}
+
+	// 删除目录及其所有内容
+	if err := os.RemoveAll(fullPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete directory"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Directory deleted successfully"})
+}
