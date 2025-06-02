@@ -113,17 +113,18 @@ go run main.go
 1. **Download the latest release**
    - Go to the [Releases](https://github.com/yourusername/file-server/releases) page
    - Download the package for your operating system:
-     - Linux: `file-server-linux.tar.gz`
+     - Linux: `file-server-linux.zip`
      - Windows: `file-server-windows.zip`
-     - macOS: `file-server-darwin.tar.gz`
+     - macOS: `file-server-darwin.zip`
 
 2. **Extract the package**
+   - Extract the downloaded `.zip` file using your preferred tool
    ```bash
-   # Linux/macOS
-   tar xzf file-server-linux.tar.gz   # or file-server-darwin.tar.gz
+   # Example for Linux/macOS using unzip
+   unzip file-server-linux.zip   # or file-server-darwin.zip
    
    # Windows
-   # Extract file-server-windows.zip using your preferred tool
+   # Use Windows Explorer or any zip tool to extract
    ```
 
 3. **Configure the server**
