@@ -1,0 +1,54 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Generate Embedded Files
+      run: |
+        mkdir -p static
+        cp -r frontend/dist/* static/
+        echo 'package main
+
+        import "embed"
+
+        //go:embed static/*
+        var staticFiles embed.FS' > embed.go
+
+    - name: Build Go Binary
+      run: |
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/file-server-linux-amd64
+        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o bin/file-server-windows-amd64.exe
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bin/file-server-darwin-amd64
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries
+        path: bin/
