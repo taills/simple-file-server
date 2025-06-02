@@ -48,7 +48,7 @@ jobs:
         CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bin/file-server-darwin-amd64
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: binaries
         path: bin/
