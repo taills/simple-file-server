@@ -4,6 +4,7 @@ import (
 	"file-server/config"
 	"file-server/handlers"
 	"file-server/middleware"
+	"flag"
 	"io/fs"
 	"log"
 	"net/http"
@@ -14,6 +15,18 @@ import (
 )
 
 func main() {
+	// 解析命令行参数
+	configPath := flag.String("c", "", "配置文件路径")
+	flag.StringVar(configPath, "config", "", "配置文件路径")
+	flag.Parse()
+
+	// 如果提供了配置文件，则从文件加载配置
+	if *configPath != "" {
+		if err := config.LoadConfig(*configPath); err != nil {
+			log.Fatalf("加载配置文件失败: %v", err)
+		}
+	}
+
 	// 确保上传目录存在
 	if err := os.MkdirAll(config.AppConfig.StoragePath, 0755); err != nil {
 		log.Fatal(err)
@@ -78,5 +91,7 @@ func main() {
 		c.Data(http.StatusOK, "text/html", data)
 	})
 
-	r.Run(":8090")
+	// 使用配置中的监听地址启动服务器
+	log.Printf("服务器启动在 %s\n", config.AppConfig.ListenAddr)
+	r.Run(config.AppConfig.ListenAddr)
 }

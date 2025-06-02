@@ -1,0 +1,7 @@
+{
+    "jwt_secret": "your-production-secret-key",
+    "storage_path": "./uploads",
+    "admin_username": "admin",
+    "admin_password": "strong-password",
+    "listen_addr": ":8080"
+}

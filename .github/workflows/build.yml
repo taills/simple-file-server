@@ -47,8 +47,42 @@ jobs:
         CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o bin/file-server-windows-amd64.exe
         CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bin/file-server-darwin-amd64
 
-    - name: Upload artifacts
+    - name: Create Release Packages
+      run: |
+        mkdir -p release/linux release/windows release/darwin
+        
+        # Copy binaries
+        cp bin/file-server-linux-amd64 release/linux/file-server
+        cp bin/file-server-windows-amd64.exe release/windows/file-server.exe
+        cp bin/file-server-darwin-amd64 release/darwin/file-server
+        
+        # Copy config and docs for each platform
+        for dir in release/*; do
+          cp config.json "$dir/"
+          cp README.md "$dir/"
+          cp -r static "$dir/"
+        done
+        
+        # Create archives
+        cd release
+        tar czf ../file-server-linux.tar.gz linux/
+        cd windows && zip -r ../../file-server-windows.zip . && cd ..
+        tar czf ../file-server-darwin.tar.gz darwin/
+
+    - name: Upload Linux Package
       uses: actions/upload-artifact@v4
       with:
-        name: binaries
-        path: bin/
+        name: file-server-linux
+        path: file-server-linux.tar.gz
+        
+    - name: Upload Windows Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: file-server-windows
+        path: file-server-windows.zip
+        
+    - name: Upload macOS Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: file-server-darwin
+        path: file-server-darwin.tar.gz
