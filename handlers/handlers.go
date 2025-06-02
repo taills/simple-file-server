@@ -6,11 +6,39 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// validatePath 检查路径是否在允许的范围内
+func validatePath(basePath string, paths ...string) (string, bool) {
+	// 将所有路径合并
+	fullPath := filepath.Join(append([]string{basePath}, paths...)...)
+
+	// 规范化路径
+	fullPath = filepath.Clean(fullPath)
+
+	// 检查最终路径是否在 basePath 内
+	rel, err := filepath.Rel(basePath, fullPath)
+	if err != nil {
+		return "", false
+	}
+
+	// 检查相对路径是否包含 ..
+	if strings.Contains(rel, "..") {
+		return "", false
+	}
+
+	// 确保路径确实以 basePath 开头
+	if !strings.HasPrefix(fullPath, basePath) {
+		return "", false
+	}
+
+	return fullPath, true
+}
 
 // 登录处理
 func Login(c *gin.Context) {
@@ -74,17 +102,28 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
+	// 获取并验证路径
 	path := c.DefaultPostForm("path", "")
-	fullPath := filepath.Join(config.AppConfig.StoragePath, path)
+	validatedPath, ok := validatePath(config.AppConfig.StoragePath, path)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path"})
+		return
+	}
 
 	// 确保目录存在
-	if err := os.MkdirAll(fullPath, 0755); err != nil {
+	if err := os.MkdirAll(validatedPath, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create directory"})
 		return
 	}
 
-	filename := filepath.Join(fullPath, file.Filename)
-	if err := c.SaveUploadedFile(file, filename); err != nil {
+	// 验证文件名和完整路径
+	fullPath, ok := validatePath(config.AppConfig.StoragePath, path, file.Filename)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid filename"})
+		return
+	}
+
+	if err := c.SaveUploadedFile(file, fullPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save file"})
 		return
 	}
@@ -96,7 +135,13 @@ func UploadFile(c *gin.Context) {
 func DownloadFile(c *gin.Context) {
 	filename := c.Param("filename")
 	path := c.DefaultQuery("path", "")
-	fullPath := filepath.Join(config.AppConfig.StoragePath, path, filename)
+
+	// 验证完整路径
+	fullPath, ok := validatePath(config.AppConfig.StoragePath, path, filename)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path or filename"})
+		return
+	}
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
@@ -110,9 +155,19 @@ func DownloadFile(c *gin.Context) {
 func DeleteFile(c *gin.Context) {
 	filename := c.Param("filename")
 	path := c.DefaultQuery("path", "")
-	fullPath := filepath.Join(config.AppConfig.StoragePath, path, filename)
+
+	// 验证完整路径
+	fullPath, ok := validatePath(config.AppConfig.StoragePath, path, filename)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path or filename"})
+		return
+	}
 
 	if err := os.Remove(fullPath); err != nil {
+		if os.IsNotExist(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete file"})
 		return
 	}
