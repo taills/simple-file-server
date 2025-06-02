@@ -4,8 +4,11 @@ import (
 	"file-server/config"
 	"file-server/handlers"
 	"file-server/middleware"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,6 +55,28 @@ func main() {
 		authenticated.POST("/mkdir", handlers.CreateDirectory)
 		authenticated.DELETE("/rmdir/:dirname", handlers.DeleteDirectory)
 	}
+
+	// 提供嵌入式静态文件服务
+	staticFS, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/assets/") {
+			c.FileFromFS(path, http.FS(staticFS))
+			return
+		}
+
+		// 对于所有其他路径，返回 index.html
+		data, err := fs.ReadFile(staticFS, "index.html")
+		if err != nil {
+			c.String(http.StatusNotFound, "File not found")
+			return
+		}
+		c.Data(http.StatusOK, "text/html", data)
+	})
 
 	r.Run(":8090")
 }
