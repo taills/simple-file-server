@@ -1,0 +1,69 @@
+{
+  "common": {
+    "login": "登录",
+    "logout": "退出",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "提交",
+    "cancel": "取消",
+    "unknownError": "未知错误",
+    "validation": {
+      "requiredFields": "请输入用户名和密码",
+      "loginFailed": "登录失败，请重试"
+    }
+  },
+  "fileManager": {
+    "title": "文件管理器",
+    "upload": "上传",
+    "download": "下载",
+    "delete": "删除",
+    "rename": "重命名",
+    "newFolder": "新建文件夹",
+    "filename": "文件名",
+    "size": "大小",
+    "lastModified": "修改时间",
+    "loadError": "加载文件失败：{error}",
+    "uploadCommand": "获取上传命令",
+    "refresh": "刷新",
+    "backToParent": "返回上级",
+    "root": "根目录",
+    "emptyFolder": "此文件夹为空",
+    "folders": "文件夹",
+    "files": "文件",
+    "uploadFile": "上传文件",
+    "createFolder": "创建",
+    "dialog": {
+      "newFolder": {
+        "title": "新建文件夹",
+        "message": "请输入要创建的文件夹名称:",
+        "label": "文件夹名称"
+      },
+      "uploadCommand": {
+        "title": "文件上传命令",
+        "instructions": {
+          "title": "使用说明:",
+          "line1": "命令将上传文件到当前目录:",
+          "line2": "请将 '/path/to/your/local/file' 替换为您本地文件的实际路径",
+          "line3": "token 已从本地存储自动获取"
+        },
+        "copy": "复制命令",
+        "close": "关闭"
+      }
+    },
+    "messages": {
+      "createSuccess": "文件夹 {name} 创建成功",
+      "createError": "创建目录失败：{error}",
+      "uploadSuccess": "文件 {name} 上传成功",
+      "uploadError": "上传文件失败：{error}",
+      "downloadSuccess": "文件 {name} 下载成功",
+      "downloadError": "下载文件失败：{error}",
+      "deleteSuccess": "文件 {name} 已删除",
+      "deleteError": "删除文件失败：{error}",
+      "deleteFolderSuccess": "文件夹 {name} 已删除",
+      "deleteFolderError": "删除文件夹失败：{error}",
+      "copySuccess": "命令已复制到剪贴板",
+      "copyError": "复制到剪贴板失败",
+      "invalidFileName": "文件名包含非法字符 (<>:\"/\\|?*)"
+    }
+  }
+}

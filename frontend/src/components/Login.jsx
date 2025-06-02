@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -18,13 +19,14 @@ function Login() {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!username || !password) {
-      setError('请输入用户名和密码');
+      setError(t('common.validation.requiredFields'));
       return;
     }
 
@@ -38,8 +40,8 @@ function Login() {
         setError(result.message);
       }
     } catch (error) {
-      console.error('登录处理错误:', error);
-      setError('登录失败，请重试');
+      console.error('Login error:', error);
+      setError(t('common.validation.loginFailed'));
     }
   };
 
@@ -74,7 +76,7 @@ function Login() {
             <LockOutlinedIcon sx={{ color: 'white' }} />
           </Box>
           <Typography component="h1" variant="h5">
-            文件服务器登录
+            {t('common.login')}
           </Typography>
           {error && (
             <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
@@ -92,7 +94,7 @@ function Login() {
               required
               fullWidth
               id="username"
-              label="用户名"
+              label={t('common.username')}
               name="username"
               autoComplete="username"
               autoFocus
@@ -104,7 +106,7 @@ function Login() {
               required
               fullWidth
               name="password"
-              label="密码"
+              label={t('common.password')}
               type="password"
               id="password"
               autoComplete="current-password"
@@ -117,7 +119,7 @@ function Login() {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              登录
+              {t('common.login')}
             </Button>
           </Box>
         </Paper>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { fileAPI } from '../services/api';
 import {
   Box,
@@ -46,7 +47,8 @@ function FileExplorer() {
   const [newDirName, setNewDirName] = useState('');
   const [isCreateDirDialogOpen, setIsCreateDirDialogOpen] = useState(false);
   const [isCurlDialogOpen, setIsCurlDialogOpen] = useState(false);
-  const [pathHistory, setPathHistory] = useState([{ name: '根目录', path: '' }]);
+  const { t } = useTranslation();
+  const [pathHistory, setPathHistory] = useState([{ name: t('fileManager.root'), path: '' }]);
   const [isUploading, setIsUploading] = useState(false); // 防止重复上传
   const fileInputRef = useRef(null);
 
@@ -65,7 +67,7 @@ function FileExplorer() {
         logout();
         navigate('/login');
       } else {
-        setError('加载文件失败：' + (err.response?.data?.message || '未知错误'));
+        setError(t('fileManager.messages.loadError', { error: err.response?.data?.message || t('common.unknownError') }));
       }
     } finally {
       setIsLoading(false);
@@ -118,7 +120,7 @@ function FileExplorer() {
       
       setSuccessMessage(`文件 ${fileName} 下载成功`);
     } catch (err) {
-      setError('下载文件失败：' + (err.response?.data?.message || '未知错误'));
+      setError(t('fileManager.messages.downloadError', { error: err.response?.data?.message || '未知错误' }));
     }
   };
 
@@ -137,7 +139,7 @@ function FileExplorer() {
   const handleDeleteDirectory = async (dirName) => {
     try {
       await fileAPI.deleteDirectory(dirName, currentPath);
-      setSuccessMessage(`文件夹 ${dirName} 已删除`);
+      setSuccessMessage(t('fileManager.messages.deleteFolderSuccess', { name: dirName }));
       loadFilesAndDirectories();
     } catch (err) {
       setError('删除文件夹失败：' + (err.response?.data?.message || '未知错误'));
@@ -184,7 +186,7 @@ function FileExplorer() {
       const fileName = selectedFile.name;
       const invalidChars = /[<>:"\/\\|?*\x00-\x1F]/g;
       if (invalidChars.test(fileName)) {
-        throw new Error('文件名包含非法字符 (<>:"/\\|?*)');
+        throw new Error(t('fileManager.messages.invalidFileName'));
       }
 
       // 构造完整路径并检查
@@ -193,7 +195,7 @@ function FileExplorer() {
 
       const response = await fileAPI.uploadFile(selectedFile, currentPath);
       console.log('上传成功，服务器响应:', response.data);
-      setSuccessMessage(`文件 ${fileName} 上传成功`);
+      setSuccessMessage(t('fileManager.messages.uploadSuccess', { name: fileName }));
       loadFilesAndDirectories(); // 刷新文件列表
     } catch (err) {
       console.error('上传错误详情:', err);
@@ -208,7 +210,7 @@ function FileExplorer() {
         errorMessage = '未知错误';
       }
       console.error('错误消息:', errorMessage);
-      setError('上传文件失败：' + errorMessage);
+      setError(t('fileManager.messages.uploadError', { error: errorMessage }));
     } finally {
       console.log('上传处理完成，重置加载状态');
       setIsLoading(false); // 确保无论如何都会停止加载指示器
@@ -223,7 +225,7 @@ function FileExplorer() {
   // 创建新目录
   const handleCreateDirectory = async () => {
     if (!newDirName) {
-      setError('请输入目录名');
+      setError(t('fileManager.messages.createError', { error: t('fileManager.dialog.newFolder.message') }));
       return;
     }
 
@@ -233,7 +235,7 @@ function FileExplorer() {
     try {
       const response = await fileAPI.createDirectory(newDirName, currentPath);
       console.log('创建目录成功:', response.data);
-      setSuccessMessage(`目录 ${newDirName} 创建成功`);
+      setSuccessMessage(t('fileManager.messages.createSuccess', { name: newDirName }));
       setIsCreateDirDialogOpen(false);
       setNewDirName('');
       loadFilesAndDirectories();
@@ -263,10 +265,10 @@ function FileExplorer() {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      setSuccessMessage('命令已复制到剪贴板');
+      setSuccessMessage(t('fileManager.messages.copySuccess'));
       setIsCurlDialogOpen(false);
     } catch (err) {
-      setError('复制到剪贴板失败');
+      setError(t('fileManager.messages.copyError'));
     }
   };
 
@@ -276,7 +278,7 @@ function FileExplorer() {
         <Paper elevation={3} sx={{ padding: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h4" component="h1">
-              文件浏览器
+              {t('fileManager.title')}
             </Typography>
             <Button variant="outlined" color="error" onClick={logout}>
               退出登录
@@ -309,7 +311,7 @@ function FileExplorer() {
                 startIcon={<ArrowBackIcon />}
                 onClick={handleGoBack}
               >
-                返回上级
+                {t('fileManager.backToParent')}
               </Button>
             )}
             {/* 修改上传按钮 */}
@@ -320,7 +322,7 @@ function FileExplorer() {
               onClick={handleUploadButtonClick}
               disabled={isUploading}
             >
-              上传文件
+              {t('fileManager.uploadFile')}
             </Button>
             <input
               id="file-upload"
@@ -338,20 +340,20 @@ function FileExplorer() {
               startIcon={<CreateNewFolderIcon />}
               onClick={() => setIsCreateDirDialogOpen(true)}
             >
-              新建文件夹
+              {t('fileManager.newFolder')}
             </Button>
             <Button
               variant="outlined"
               onClick={loadFilesAndDirectories}
             >
-              刷新
+              {t('fileManager.refresh')}
             </Button>
             <Button
               variant="outlined"
               color="info"
               onClick={() => setIsCurlDialogOpen(true)}
             >
-              获取上传命令
+              {t('fileManager.uploadCommand')}
             </Button>
           </Box>
 
@@ -370,7 +372,7 @@ function FileExplorer() {
               </Box>
             ) : directories.length === 0 && files.length === 0 ? (
               <Typography variant="body1" align="center" sx={{ py: 5, color: 'text.secondary' }}>
-                此文件夹为空
+                {t('fileManager.emptyFolder')}
               </Typography>
             ) : (
               <Box>
@@ -378,7 +380,7 @@ function FileExplorer() {
                 {directories.length > 0 && (
                   <>
                     <Typography variant="h6" sx={{ mb: 1 }}>
-                      文件夹
+                      {t('fileManager.folders')}
                     </Typography>
                     <List>
                       {directories.map((dir) => (
@@ -414,7 +416,7 @@ function FileExplorer() {
                 {files.length > 0 && (
                   <>
                     <Typography variant="h6" sx={{ mb: 1 }}>
-                      文件
+                      {t('fileManager.files')}
                     </Typography>
                     <List>
                       {files.map((file) => (
@@ -460,16 +462,16 @@ function FileExplorer() {
 
       {/* 创建目录对话框 */}
       <Dialog open={isCreateDirDialogOpen} onClose={() => setIsCreateDirDialogOpen(false)}>
-        <DialogTitle>新建文件夹</DialogTitle>
+        <DialogTitle>{t('fileManager.dialog.newFolder.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            请输入要创建的文件夹名称:
+            {t('fileManager.dialog.newFolder.message')}
           </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
             id="name"
-            label="文件夹名称"
+            label={t('fileManager.dialog.newFolder.label')}
             type="text"
             fullWidth
             variant="outlined"
@@ -478,8 +480,8 @@ function FileExplorer() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsCreateDirDialogOpen(false)}>取消</Button>
-          <Button onClick={handleCreateDirectory} variant="contained">创建</Button>
+          <Button onClick={() => setIsCreateDirDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCreateDirectory} variant="contained">{t('fileManager.createFolder')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -490,22 +492,22 @@ function FileExplorer() {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>文件上传命令</DialogTitle>
+        <DialogTitle>{t('fileManager.dialog.uploadCommand.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', my: 2 }}>
             {generateCurlCommand()}
           </DialogContentText>
           <DialogContentText>
-            使用说明:
-            1. 命令将上传文件到当前目录: {currentPath || '根目录'}
-            2. 请将 '/path/to/your/local/file' 替换为您本地文件的实际路径
-            3. token 已从本地存储自动获取
+            {t('fileManager.dialog.uploadCommand.instructions.title')}
+            1. {t('fileManager.dialog.uploadCommand.instructions.line1')} {currentPath || t('fileManager.root')}
+            2. {t('fileManager.dialog.uploadCommand.instructions.line2')}
+            3. {t('fileManager.dialog.uploadCommand.instructions.line3')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsCurlDialogOpen(false)}>关闭</Button>
+          <Button onClick={() => setIsCurlDialogOpen(false)}>{t('fileManager.dialog.uploadCommand.close')}</Button>
           <Button onClick={() => copyToClipboard(generateCurlCommand())} variant="contained">
-            复制命令
+            {t('fileManager.dialog.uploadCommand.copy')}
           </Button>
         </DialogActions>
       </Dialog>

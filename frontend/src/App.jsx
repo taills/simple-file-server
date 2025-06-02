@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import Login from './components/Login'
 import FileExplorer from './components/FileExplorer'
 import PrivateRoute from './components/PrivateRoute'
+import LanguageSwitcher from './components/LanguageSwitcher'
 import './App.css'
 
 // 创建主题
@@ -23,6 +24,9 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+        </div>
         <Router>
           <Routes>
             {/* 登录路由 */}

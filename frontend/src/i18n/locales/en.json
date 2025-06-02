@@ -1,0 +1,69 @@
+{
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "unknownError": "Unknown error",
+    "validation": {
+      "requiredFields": "Please enter username and password",
+      "loginFailed": "Login failed, please try again"
+    }
+  },
+  "fileManager": {
+    "title": "File Manager",
+    "upload": "Upload",
+    "download": "Download",
+    "delete": "Delete",
+    "rename": "Rename",
+    "newFolder": "New Folder",
+    "filename": "File Name",
+    "size": "Size",
+    "lastModified": "Last Modified",
+    "loadError": "Failed to load files: {error}",
+    "uploadCommand": "Get Upload Command",
+    "refresh": "Refresh",
+    "backToParent": "Back",
+    "root": "Root",
+    "emptyFolder": "This folder is empty",
+    "folders": "Folders",
+    "files": "Files",
+    "uploadFile": "Upload File",
+    "createFolder": "Create",
+    "dialog": {
+      "newFolder": {
+        "title": "New Folder",
+        "message": "Please enter the name of the folder:",
+        "label": "Folder Name"
+      },
+      "uploadCommand": {
+        "title": "File Upload Command",
+        "instructions": {
+          "title": "Instructions:",
+          "line1": "Command will upload to current directory:",
+          "line2": "Replace '/path/to/your/local/file' with your actual file path",
+          "line3": "Token is automatically retrieved from local storage"
+        },
+        "copy": "Copy Command",
+        "close": "Close"
+      }
+    },
+    "messages": {
+      "createSuccess": "Folder {name} created successfully",
+      "createError": "Failed to create folder: {error}",
+      "uploadSuccess": "File {name} uploaded successfully",
+      "uploadError": "Failed to upload file: {error}",
+      "downloadSuccess": "File {name} downloaded successfully",
+      "downloadError": "Failed to download file: {error}",
+      "deleteSuccess": "File {name} deleted",
+      "deleteError": "Failed to delete file: {error}",
+      "deleteFolderSuccess": "Folder {name} deleted",
+      "deleteFolderError": "Failed to delete folder: {error}",
+      "copySuccess": "Command copied to clipboard",
+      "copyError": "Failed to copy to clipboard",
+      "invalidFileName": "File name contains invalid characters (<>:\"/\\|?*)"
+    }
+  }
+}

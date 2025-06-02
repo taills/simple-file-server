@@ -1,0 +1,69 @@
+{
+  "common": {
+    "login": "登入",
+    "logout": "登出",
+    "username": "用戶名",
+    "password": "密碼",
+    "submit": "提交",
+    "cancel": "取消",
+    "unknownError": "未知錯誤",
+    "validation": {
+      "requiredFields": "請輸入用戶名和密碼",
+      "loginFailed": "登入失敗，請重試"
+    }
+  },
+  "fileManager": {
+    "title": "檔案管理器",
+    "upload": "上傳",
+    "download": "下載",
+    "delete": "刪除",
+    "rename": "重新命名",
+    "newFolder": "新建資料夾",
+    "filename": "檔案名",
+    "size": "大小",
+    "lastModified": "修改時間",
+    "loadError": "載入檔案失敗：{error}",
+    "uploadCommand": "獲取上傳命令",
+    "refresh": "重新整理",
+    "backToParent": "返回上級",
+    "root": "根目錄",
+    "emptyFolder": "此資料夾為空",
+    "folders": "資料夾",
+    "files": "檔案",
+    "uploadFile": "上傳檔案",
+    "createFolder": "建立",
+    "dialog": {
+      "newFolder": {
+        "title": "新建資料夾",
+        "message": "請輸入要建立的資料夾名稱:",
+        "label": "資料夾名稱"
+      },
+      "uploadCommand": {
+        "title": "檔案上傳命令",
+        "instructions": {
+          "title": "使用說明:",
+          "line1": "命令將上傳檔案到當前目錄:",
+          "line2": "請將 '/path/to/your/local/file' 替換為您本機檔案的實際路徑",
+          "line3": "token 已從本機存儲自動獲取"
+        },
+        "copy": "複製命令",
+        "close": "關閉"
+      }
+    },
+    "messages": {
+      "createSuccess": "資料夾 {name} 建立成功",
+      "createError": "建立目錄失敗：{error}",
+      "uploadSuccess": "檔案 {name} 上傳成功",
+      "uploadError": "上傳檔案失敗：{error}",
+      "downloadSuccess": "檔案 {name} 下載成功",
+      "downloadError": "下載檔案失敗：{error}",
+      "deleteSuccess": "檔案 {name} 已刪除",
+      "deleteError": "刪除檔案失敗：{error}",
+      "deleteFolderSuccess": "資料夾 {name} 已刪除",
+      "deleteFolderError": "刪除資料夾失敗：{error}",
+      "copySuccess": "命令已複製到剪貼簿",
+      "copyError": "複製到剪貼簿失敗",
+      "invalidFileName": "檔案名包含非法字符 (<>:\"/\\|?*)"
+    }
+  }
+}
