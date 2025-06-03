@@ -256,8 +256,9 @@ function FileExplorer() {
     // 清理路径，移除开头和结尾的斜杠
     const uploadPath = currentPath ? currentPath.replace(/^\/+|\/+$/g, '') : '';
     return `curl -X POST \\
-  "${baseUrl}/api/upload?path=${encodeURIComponent(uploadPath)}" \\
+  "${baseUrl}/api/upload" \\
   -H "Authorization: Bearer ${token}" \\
+  -F "path=${encodeURIComponent(uploadPath)}" \\
   -F "file=@/path/to/your/local/file"`;
   }, [currentPath]);
 
